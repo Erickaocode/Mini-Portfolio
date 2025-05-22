@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Portfólio - Erick Silva</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d0d0d;
+      color: white;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+    }
+    .profile-card {
+      background: #1e1e1e;
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+    .profile-card img {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 10px;
+    }
+    .profile-card h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+    .profile-card p {
+      color: #aaa;
+      margin-top: 4px;
+    }
+    .section-title {
+      color: #5ea3ff;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+    .skills {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .skills i {
+      font-size: 24px;
+    }
+    .socials {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .socials a {
+      background: #1e1e1e;
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      color: white;
+      font-size: 22px;
+      transition: 0.3s;
+    }
+    .socials a:hover {
+      background: #5ea3ff;
+    }
+    .portfolio-btn {
+      display: block;
+      text-align: center;
+      margin-top: 30px;
+      background: #007aff;
+      color: white;
+      padding: 15px;
+      border-radius: 12px;
+      font-weight: bold;
+      text-decoration: none;
+    }
+    iframe {
+      margin-top: 25px;
+      border-radius: 12px;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="profile-card">
+      <img src="Img/Erickao img.png" alt="Foto de perfil">
+      <h2>Erick Silva</h2>
+      <p>Desenvolvedor </p>
+    </div>
+
+    <div class="section-title">Hard Skills</div>
+    <div class="skills">
+      <i class="fa-brands fa-html5" title="HTML"></i>
+      <i class="fa-brands fa-css3-alt" title="CSS"></i>
+      <i class="fa-brands fa-js" title="JavaScript"></i>
+      <i class="fa-solid fa-database" title="SQL"></i>
+    </div>
+
+    <div class="socials">
+      <a href="https://www.instagram.com/_erickz77_/" target="_blank"><i class="fab fa-instagram"></i></a>
+      <a href="https://github.com/Erickaocode/" target="_blank"><i class="fab fa-github"></i></a>
+      <a href="https://www.linkedin.com/in/erick-silva-8579002b0/" target="_blank"><i class="fab fa-linkedin"></i></a>
+      <a href="mailto:ericksilva112017@gmail.com"><i class="fa-solid fa-envelope"></i></a>
+    </div>
+
+    <a href="https://erickaocode.github.io/Portfolio/" class="portfolio-btn">Meu site portfólio</a>
+
+    <!-- Spotify Embed -->
+    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/6MH2UdjbDRXLmOcnSJAJuE?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+  </div>
+</body>
+</html>
