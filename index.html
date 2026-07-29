@@ -38,13 +38,13 @@
       <section class="profile-panel" aria-label="Apresentação" data-reveal style="animation-delay:0.05s">
         <div class="profile-media">
           <img src="Img/Erickao img.png" alt="Foto de Erick Silva sorrindo" />
+          <span class="status-dot" id="statusDot" title="Status"></span>
         </div>
 
         <div class="profile-main">
           <div class="profile-copy">
-            <p class="eyebrow">Mini portfólio</p>
-            <h1>Erick Silva</h1>
-            <p class="role">Desenvolvedor Web</p>
+            <h1 id="scrambleName">Erick Silva</h1>
+            <p class="role" id="roleCycle">Desenvolvedor Web</p>
             <p class="bio">Apaixonado por tecnologia, sempre evoluindo pra transformar ideia em produto.</p>
           </div>
 
@@ -164,6 +164,122 @@
         glow.classList.add('active');
       });
     }
+
+    // ===== EFEITO SCRAMBLE (texto embaralhado que se resolve na palavra final) =====
+    const SCRAMBLE_CHARS = '!<>-_\\/[]{}—=+*^?#0101';
+
+    function TextScramble(node) {
+      this.el = node;
+      this.frame = 0;
+      this.frameRequest = null;
+      this.queue = [];
+      this.update = this.update.bind(this);
+    }
+
+    TextScramble.prototype.setText = function (newText) {
+      const oldText = this.el.textContent;
+      const length = Math.max(oldText.length, newText.length);
+      const promise = new Promise((resolve) => { this.resolve = resolve; });
+      this.queue = [];
+      for (let i = 0; i < length; i++) {
+        const from = oldText[i] || '';
+        const to = newText[i] || '';
+        const start = Math.floor(Math.random() * 30);
+        const end = start + Math.floor(Math.random() * 30) + 10;
+        this.queue.push({ from, to, start, end, char: '' });
+      }
+      cancelAnimationFrame(this.frameRequest);
+      this.frame = 0;
+      this.update();
+      return promise;
+    };
+
+    TextScramble.prototype.update = function () {
+      let output = '';
+      let complete = 0;
+      for (let i = 0; i < this.queue.length; i++) {
+        const item = this.queue[i];
+        if (this.frame >= item.end) {
+          complete++;
+          output += item.to;
+        } else if (this.frame >= item.start) {
+          if (!item.char || Math.random() < 0.3) {
+            item.char = SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+          }
+          output += '<span class="scramble-char">' + item.char + '</span>';
+        } else {
+          output += item.from;
+        }
+      }
+      this.el.innerHTML = output;
+      if (complete === this.queue.length) {
+        this.resolve();
+      } else {
+        this.frameRequest = requestAnimationFrame(this.update);
+        this.frame++;
+      }
+    };
+
+    // Nome: roda o scramble uma única vez, assim que a página carrega.
+    (function () {
+      const el = document.getElementById('scrambleName');
+      if (!el) return;
+      const finalText = el.textContent;
+      const fx = new TextScramble(el);
+      setTimeout(() => fx.setText(finalText), 200);
+    })();
+
+    // Cargo: fica alternando entre as frases com o efeito scramble.
+    (function () {
+      const el = document.getElementById('roleCycle');
+      if (!el) return;
+      const frases = [
+        'Desenvolvedor Web', 'Web Developer',
+        'Engenheiro de Software', 'Software Engineer',
+        'Engenheiro de IA', 'AI Engineer',
+        'Full Stack Developer',
+        'Criador de Soluções Digitais', 'Digital Solutions Creator'
+      ];
+      const fx = new TextScramble(el);
+      let counter = 0;
+
+      function next() {
+        fx.setText(frases[counter]).then(() => {
+          setTimeout(next, 2400);
+        });
+        counter = (counter + 1) % frases.length;
+      }
+
+      setTimeout(next, 1800);
+    })();
+
+    // ===== STATUS ONLINE (Discord via Lanyard) =====
+    const DISCORD_USER_ID = '1062440850208067664';
+    const LANYARD_ENDPOINT = 'https://api.lanyard.rest/v1/users/' + DISCORD_USER_ID;
+    const STATUS_POLL_MS = 20000;
+    const statusDot = document.getElementById('statusDot');
+
+    async function fetchDiscordStatus() {
+      if (!statusDot) return;
+      try {
+        const res = await fetch(LANYARD_ENDPOINT, { cache: 'no-store' });
+        if (!res.ok) throw new Error('bad status');
+        const json = await res.json();
+        if (!json.success) throw new Error('lanyard error');
+
+        const status = json.data.discord_status || 'offline';
+        statusDot.className = 'status-dot status-' + status;
+
+        const labels = { online: 'Online', idle: 'Ausente', dnd: 'Não perturbe', offline: 'Offline' };
+        statusDot.title = labels[status] || 'Offline';
+      } catch (err) {
+        statusDot.className = 'status-dot status-offline';
+        statusDot.title = 'Offline';
+      }
+    }
+
+    fetchDiscordStatus();
+    setInterval(fetchDiscordStatus, STATUS_POLL_MS);
 
     const SPOTIFY_ENDPOINT = 'https://spotify-widget-fawn.vercel.app/api/now-playing';
     const POLL_MS = 8000;

@@ -195,10 +195,6 @@ a {
   width: 128px;
   height: 128px;
   margin: 0 auto 18px;
-  border: 3px solid rgba(var(--color-destaque1-rgb), 0.55);
-  border-radius: 50%;
-  overflow: hidden;
-  box-shadow: 0 0 0 8px rgba(var(--color-destaque1-rgb), 0.08), 0 0 40px rgba(var(--color-destaque1-rgb), 0.3);
 }
 
 .profile-media img {
@@ -206,6 +202,37 @@ a {
   height: 100%;
   display: block;
   object-fit: cover;
+  border: 3px solid rgba(var(--color-destaque1-rgb), 0.55);
+  border-radius: 50%;
+  box-shadow: 0 0 0 8px rgba(var(--color-destaque1-rgb), 0.08), 0 0 40px rgba(var(--color-destaque1-rgb), 0.3);
+}
+
+.status-dot {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px solid var(--color-panel);
+  background: var(--color-gray1);
+}
+
+.status-dot.status-online {
+  background: var(--color-whatsapp);
+  animation: npPulse 2s infinite;
+}
+
+.status-dot.status-idle {
+  background: #f2b705;
+}
+
+.status-dot.status-dnd {
+  background: #ed4245;
+}
+
+.status-dot.status-offline {
+  background: var(--color-gray1);
 }
 
 .eyebrow,
@@ -239,6 +266,15 @@ h1, h2, p {
   color: var(--color-gray2);
   font-weight: 700;
   letter-spacing: 0.5px;
+  line-height: 1.3;
+  /* reserva espaço para 2 linhas: evita que o layout trema quando o scramble
+     troca de frase e o número de linhas muda (ex: "Web Developer" -> "Engenheiro de Software") */
+  min-height: calc(1.3em * 2);
+}
+
+.scramble-char {
+  color: var(--color-destaque1);
+  opacity: 0.8;
 }
 
 .bio {
@@ -710,6 +746,9 @@ h1, h2, p {
   .profile-media {
     width: 208px;
     height: 208px;
+  }
+
+  .profile-media img {
     border-width: 4px;
   }
 
