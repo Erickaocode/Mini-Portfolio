@@ -1,0 +1,9 @@
+{
+  "name": "erick-spotify-widget",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Serverless endpoint that exposes what Erick is currently listening to on Spotify.",
+  "engines": {
+    "node": ">=18"
+  }
+}
