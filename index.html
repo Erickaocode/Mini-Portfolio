@@ -165,9 +165,8 @@
       });
     }
 
-    // Troque pela URL do seu deploy no Vercel depois de seguir o README em spotify-widget/.
-    const SPOTIFY_ENDPOINT = 'https://SEU-PROJETO.vercel.app/api/now-playing';
-    const POLL_MS = 20000;
+    const SPOTIFY_ENDPOINT = 'https://spotify-widget-fawn.vercel.app/api/now-playing';
+    const POLL_MS = 8000;
 
     const npDot = document.getElementById('npDot');
     const npStatusText = document.getElementById('npStatusText');
@@ -177,14 +176,53 @@
     const npArtist = document.getElementById('npArtist');
     const npProgressFill = document.getElementById('npProgressFill');
 
+    // Estado da faixa atual, usado para interpolar o progresso entre um poll e outro.
+    let currentTrack = null;
+    let trackFetchedAt = 0;
+    let progressRaf = null;
+
     function setStatus(state, label) {
       npDot.className = 'np-dot np-dot-' + state;
       npStatusText.textContent = label;
     }
 
     function renderFallback() {
+      stopProgressLoop();
+      currentTrack = null;
       setStatus('offline', 'Prévia fixa');
       npBody.classList.add('np-fallback', 'np-no-art');
+    }
+
+    function stopProgressLoop() {
+      if (progressRaf) {
+        cancelAnimationFrame(progressRaf);
+        progressRaf = null;
+      }
+    }
+
+    function tickProgress() {
+      if (!currentTrack || !currentTrack.isPlaying || !currentTrack.durationMs) {
+        progressRaf = null;
+        return;
+      }
+
+      const elapsed = Date.now() - trackFetchedAt;
+      const liveProgressMs = currentTrack.progressMs + elapsed;
+      const pct = Math.min(100, (liveProgressMs / currentTrack.durationMs) * 100);
+      npProgressFill.style.width = pct + '%';
+
+      if (liveProgressMs >= currentTrack.durationMs) {
+        // A música deve ter acabado; força um refetch antecipado pra não ficar travado em 100%.
+        fetchNowPlaying();
+        return;
+      }
+
+      progressRaf = requestAnimationFrame(tickProgress);
+    }
+
+    function startProgressLoop() {
+      stopProgressLoop();
+      progressRaf = requestAnimationFrame(tickProgress);
     }
 
     function renderTrack(data) {
@@ -202,8 +240,16 @@
       npTitle.textContent = data.title;
       npArtist.textContent = data.artist;
 
-      const pct = data.durationMs ? Math.min(100, (data.progressMs / data.durationMs) * 100) : 0;
-      npProgressFill.style.width = pct + '%';
+      currentTrack = data;
+      trackFetchedAt = Date.now();
+
+      if (data.isPlaying) {
+        startProgressLoop();
+      } else {
+        stopProgressLoop();
+        const pct = data.durationMs ? Math.min(100, (data.progressMs / data.durationMs) * 100) : 0;
+        npProgressFill.style.width = pct + '%';
+      }
 
       setStatus(data.isPlaying ? 'live' : 'idle', data.isPlaying ? 'Tocando agora' : 'Ouviu por último');
     }
@@ -227,6 +273,12 @@
 
     fetchNowPlaying();
     setInterval(fetchNowPlaying, POLL_MS);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        fetchNowPlaying();
+      }
+    });
   </script>
 </body>
 </html>
