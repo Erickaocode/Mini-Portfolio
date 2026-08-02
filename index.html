@@ -355,6 +355,38 @@
       acArtFallback.className = 'fa-solid fa-moon np-art-fallback';
     }
 
+    const GAME_ART_ENDPOINT = 'https://spotify-widget-fawn.vercel.app/api/game-art';
+    const gameArtCache = new Map();
+
+    // Busca a capa do jogo numa base externa (RAWG) quando o Discord não manda
+    // uma imagem específica na Rich Presence (comum em jogos como Roblox).
+    async function fetchGameArt(name) {
+      if (gameArtCache.has(name)) return gameArtCache.get(name);
+      try {
+        const res = await fetch(GAME_ART_ENDPOINT + '?name=' + encodeURIComponent(name), { cache: 'no-store' });
+        if (!res.ok) throw new Error('bad status');
+        const data = await res.json();
+        gameArtCache.set(name, data.image || null);
+      } catch (err) {
+        gameArtCache.set(name, null);
+      }
+      return gameArtCache.get(name);
+    }
+
+    function setActivityArt(url, name) {
+      acArtImg.src = url;
+      acArtImg.alt = name || '';
+      acArtImg.style.display = '';
+      acBody.classList.remove('np-no-art');
+    }
+
+    function clearActivityArt(fallbackIcon) {
+      acBody.classList.add('np-no-art');
+      acArtImg.removeAttribute('src');
+      acArtImg.style.display = 'none';
+      acArtFallback.className = 'fa-solid ' + fallbackIcon + ' np-art-fallback';
+    }
+
     function renderActivity(activity) {
       acBody.classList.remove('np-fallback');
       acDot.className = 'np-dot np-dot-live';
@@ -368,17 +400,21 @@
       // Pra apps de código, o small_image costuma ser o logo do editor (ex.: VS Code);
       // o large_image é só o ícone genérico do tipo de arquivo, então preferimos o logo.
       const mainUrl = (isCodeActivity(activity.name) && smallUrl) || largeUrl || smallUrl;
+      const fallbackIcon = isCodeActivity(activity.name) ? 'fa-code' : 'fa-gamepad';
 
       if (mainUrl) {
-        acArtImg.src = mainUrl;
-        acArtImg.alt = activity.name || '';
-        acArtImg.style.display = '';
-        acBody.classList.remove('np-no-art');
+        setActivityArt(mainUrl, activity.name);
+      } else if (activity.name && !isCodeActivity(activity.name)) {
+        clearActivityArt(fallbackIcon);
+        const requestedFor = activity.name;
+        fetchGameArt(activity.name).then((url) => {
+          // Evita condição de corrida: só aplica se a atividade exibida ainda for essa.
+          if (url && acTitle.textContent === requestedFor) {
+            setActivityArt(url, requestedFor);
+          }
+        });
       } else {
-        acBody.classList.add('np-no-art');
-        acArtImg.removeAttribute('src');
-        acArtImg.style.display = 'none';
-        acArtFallback.className = 'fa-solid ' + (isCodeActivity(activity.name) ? 'fa-code' : 'fa-gamepad') + ' np-art-fallback';
+        clearActivityArt(fallbackIcon);
       }
 
       stopElapsedLoop();
