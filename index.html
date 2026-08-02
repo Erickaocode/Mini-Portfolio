@@ -349,6 +349,9 @@
       acTitle.textContent = 'Nenhuma atividade detectada';
       acDetail.textContent = '';
       acElapsed.textContent = '';
+      acArtImg.removeAttribute('src');
+      acArtImg.alt = '';
+      acArtImg.style.display = 'none';
       acArtFallback.className = 'fa-solid fa-moon np-art-fallback';
     }
 
@@ -369,9 +372,12 @@
       if (mainUrl) {
         acArtImg.src = mainUrl;
         acArtImg.alt = activity.name || '';
+        acArtImg.style.display = '';
         acBody.classList.remove('np-no-art');
       } else {
         acBody.classList.add('np-no-art');
+        acArtImg.removeAttribute('src');
+        acArtImg.style.display = 'none';
         acArtFallback.className = 'fa-solid ' + (isCodeActivity(activity.name) ? 'fa-code' : 'fa-gamepad') + ' np-art-fallback';
       }
 

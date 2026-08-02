@@ -435,6 +435,7 @@ h1, h2, p {
 .music-panel,
 .activity-panel {
   padding: 20px;
+  min-width: 0;
 }
 
 .skills {
@@ -610,6 +611,10 @@ h1, h2, p {
 }
 
 .np-body:not(.np-no-art) .np-art-fallback {
+  display: none;
+}
+
+.np-body.np-no-art .np-art img {
   display: none;
 }
 
