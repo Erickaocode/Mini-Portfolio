@@ -460,8 +460,8 @@
       stopElapsedLoop();
       acBody.classList.remove('np-fallback', 'np-no-art');
       acBody.classList.add('np-stale');
-      acDot.className = 'np-dot np-dot-offline';
-      acStatusText.textContent = 'Sem atividade agora';
+      acDot.className = 'np-dot np-dot-idle';
+      acStatusText.textContent = 'Última atividade';
       applyActivityVisual(activity);
 
       const updateSeen = () => {
