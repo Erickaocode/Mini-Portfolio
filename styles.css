@@ -678,6 +678,15 @@ h1, h2, p {
   font-size: 0.78rem;
 }
 
+.np-body.np-stale .np-art {
+  filter: grayscale(0.5);
+  opacity: 0.7;
+}
+
+.np-body.np-stale .np-title {
+  opacity: 0.85;
+}
+
 /* ===== Rodapé ===== */
 .page-footer {
   margin-top: 6px;

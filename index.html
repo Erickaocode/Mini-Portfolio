@@ -278,8 +278,7 @@
     })();
 
     // ===== STATUS ONLINE + ATIVIDADE (Discord via Lanyard) =====
-    const DISCORD_USER_ID = '1062440850208067664';
-    const LANYARD_ENDPOINT = 'https://api.lanyard.rest/v1/users/' + DISCORD_USER_ID;
+    const DISCORD_ACTIVITY_ENDPOINT = 'https://spotify-widget-fawn.vercel.app/api/discord-activity';
     const STATUS_POLL_MS = 20000;
     const statusDot = document.getElementById('statusDot');
 
@@ -343,6 +342,7 @@
 
     function renderNoActivity() {
       stopElapsedLoop();
+      acBody.classList.remove('np-stale');
       acBody.classList.add('np-fallback', 'np-no-art');
       acDot.className = 'np-dot np-dot-offline';
       acStatusText.textContent = 'Sem atividade';
@@ -353,6 +353,26 @@
       acArtImg.alt = '';
       acArtImg.style.display = 'none';
       acArtFallback.className = 'fa-solid fa-moon np-art-fallback';
+    }
+
+    // Guarda a última atividade vista pra poder exibi-la quando o Discord não reportar nada.
+    const LAST_ACTIVITY_KEY = 'acLastActivity';
+
+    function saveLastActivity(activity) {
+      try {
+        localStorage.setItem(LAST_ACTIVITY_KEY, JSON.stringify({ activity, seenAt: Date.now() }));
+      } catch (err) {
+        // localStorage pode estar indisponível (modo privado etc.); ignora silenciosamente.
+      }
+    }
+
+    function loadLastActivity() {
+      try {
+        const raw = localStorage.getItem(LAST_ACTIVITY_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (err) {
+        return null;
+      }
     }
 
     const GAME_ART_ENDPOINT = 'https://spotify-widget-fawn.vercel.app/api/game-art';
@@ -387,11 +407,8 @@
       acArtFallback.className = 'fa-solid ' + fallbackIcon + ' np-art-fallback';
     }
 
-    function renderActivity(activity) {
-      acBody.classList.remove('np-fallback');
-      acDot.className = 'np-dot np-dot-live';
-      acStatusText.textContent = activityLabel(activity);
-
+    // Preenche título, detalhe e capa da atividade — compartilhado entre o estado ao vivo e o "última vez visto".
+    function applyActivityVisual(activity) {
       acTitle.textContent = activity.name || 'Atividade';
       acDetail.textContent = [activity.details, activity.state].filter(Boolean).join(' · ');
 
@@ -416,6 +433,13 @@
       } else {
         clearActivityArt(fallbackIcon);
       }
+    }
+
+    function renderActivity(activity) {
+      acBody.classList.remove('np-fallback', 'np-stale');
+      acDot.className = 'np-dot np-dot-live';
+      acStatusText.textContent = activityLabel(activity);
+      applyActivityVisual(activity);
 
       stopElapsedLoop();
       if (activity.timestamps && activity.timestamps.start) {
@@ -427,22 +451,34 @@
       } else {
         acElapsed.textContent = '';
       }
+
+      saveLastActivity(activity);
     }
 
-    // Ignora status customizado (type 4) e o Spotify (já mostrado no widget de música).
-    function pickActivity(activities) {
-      if (!Array.isArray(activities)) return null;
-      return activities.find((a) => a.type !== 4 && !(a.type === 2 && a.name === 'Spotify')) || null;
+    // Mostra a última atividade conhecida (com "visto por último há...") quando o Discord não reporta nada agora.
+    function renderLastActivity(activity, seenAt) {
+      stopElapsedLoop();
+      acBody.classList.remove('np-fallback', 'np-no-art');
+      acBody.classList.add('np-stale');
+      acDot.className = 'np-dot np-dot-offline';
+      acStatusText.textContent = 'Sem atividade agora';
+      applyActivityVisual(activity);
+
+      const updateSeen = () => {
+        acElapsed.textContent = 'Visto por último ' + formatElapsed(seenAt);
+      };
+      updateSeen();
+      elapsedTimer = setInterval(updateSeen, 60000);
     }
 
     async function fetchDiscordPresence() {
       try {
-        const res = await fetch(LANYARD_ENDPOINT, { cache: 'no-store' });
+        const res = await fetch(DISCORD_ACTIVITY_ENDPOINT, { cache: 'no-store' });
         if (!res.ok) throw new Error('bad status');
-        const json = await res.json();
-        if (!json.success) throw new Error('lanyard error');
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
 
-        const status = json.data.discord_status || 'offline';
+        const status = data.discordStatus || 'offline';
         if (statusDot) {
           statusDot.className = 'status-dot status-' + status;
           const labels = { online: 'Online', idle: 'Ausente', dnd: 'Não perturbe', offline: 'Offline' };
@@ -450,9 +486,10 @@
         }
 
         if (acBody) {
-          const activity = pickActivity(json.data.activities);
-          if (activity) {
-            renderActivity(activity);
+          if (data.activity && data.isCurrent) {
+            renderActivity(data.activity);
+          } else if (data.activity) {
+            renderLastActivity(data.activity, data.seenAt);
           } else {
             renderNoActivity();
           }
@@ -462,7 +499,14 @@
           statusDot.className = 'status-dot status-offline';
           statusDot.title = 'Offline';
         }
-        if (acBody) renderNoActivity();
+        if (acBody) {
+          const last = loadLastActivity();
+          if (last && last.activity) {
+            renderLastActivity(last.activity, last.seenAt);
+          } else {
+            renderNoActivity();
+          }
+        }
       }
     }
 
