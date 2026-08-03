@@ -524,6 +524,11 @@
     const npArtist = document.getElementById('npArtist');
     const npProgressFill = document.getElementById('npProgressFill');
 
+    // Se a URL da capa falhar ao carregar, cai pro ícone do Spotify em vez de mostrar o alt text quebrado.
+    npArtImg.onerror = function () {
+      npBody.classList.add('np-no-art');
+    };
+
     // Estado da faixa atual, usado para interpolar o progresso entre um poll e outro.
     let currentTrack = null;
     let trackFetchedAt = 0;
@@ -578,9 +583,9 @@
       npBody.href = data.songUrl || npBody.href;
 
       if (data.albumArt) {
-        npArtImg.src = data.albumArt;
-        npArtImg.alt = data.album || data.title || '';
         npBody.classList.remove('np-no-art');
+        npArtImg.alt = data.album || data.title || '';
+        npArtImg.src = data.albumArt;
       } else {
         npBody.classList.add('np-no-art');
       }
