@@ -297,9 +297,15 @@
       return /code|studio|vim|jetbrains|intellij|webstorm|pycharm|sublime/i.test(name || '');
     }
 
+    function isAutomationActivity(name) {
+      return /n8n/i.test(name || '');
+    }
+
     function activityLabel(activity) {
       switch (activity.type) {
-        case 0: return isCodeActivity(activity.name) ? 'Codando' : 'Jogando';
+        case 0:
+          if (isAutomationActivity(activity.name)) return 'Automatizando';
+          return isCodeActivity(activity.name) ? 'Codando' : 'Jogando';
         case 1: return 'Streaming';
         case 3: return 'Assistindo';
         case 5: return 'Competindo';
@@ -417,11 +423,17 @@
       // Pra apps de código, o small_image costuma ser o logo do editor (ex.: VS Code);
       // o large_image é só o ícone genérico do tipo de arquivo, então preferimos o logo.
       const mainUrl = (isCodeActivity(activity.name) && smallUrl) || largeUrl || smallUrl;
-      const fallbackIcon = isCodeActivity(activity.name) ? 'fa-code' : 'fa-gamepad';
+      const fallbackIcon = isCodeActivity(activity.name)
+        ? 'fa-code'
+        : isAutomationActivity(activity.name)
+        ? 'fa-diagram-project'
+        : 'fa-gamepad';
+      // n8n não é jogo nem editor de código: não faz sentido buscar "capa" dele na RAWG.
+      const skipGameArtLookup = isCodeActivity(activity.name) || isAutomationActivity(activity.name);
 
       if (mainUrl) {
         setActivityArt(mainUrl, activity.name);
-      } else if (activity.name && !isCodeActivity(activity.name)) {
+      } else if (activity.name && !skipGameArtLookup) {
         clearActivityArt(fallbackIcon);
         const requestedFor = activity.name;
         fetchGameArt(activity.name).then((url) => {
