@@ -11,11 +11,39 @@
   --color-destaque1: #2f81ff;
   --color-destaque1-rgb: 47, 129, 255;
   --color-destaque2: #3d5a99;
+  --color-destaque2-rgb: 61, 90, 153;
   --line: hsla(0, 0%, 100%, 0.12);
+}
+
+/* ===== Presença do Discord: a cor de destaque do site muda com o status =====
+   online = azul (padrão acima) · ausente = amarelo · não perturbe = vermelho · offline = tom acinzentado harmônico */
+:root[data-presence="idle"] {
+  --color-destaque1: #f2b705;
+  --color-destaque1-rgb: 242, 183, 5;
+  --color-destaque2: #b98a04;
+  --color-destaque2-rgb: 185, 138, 4;
+}
+
+:root[data-presence="dnd"] {
+  --color-destaque1: #ed4245;
+  --color-destaque1-rgb: 237, 66, 69;
+  --color-destaque2: #a52d2f;
+  --color-destaque2-rgb: 165, 45, 47;
+}
+
+:root[data-presence="offline"] {
+  --color-destaque1: #5b6474;
+  --color-destaque1-rgb: 91, 100, 116;
+  --color-destaque2: #3c4250;
+  --color-destaque2-rgb: 60, 66, 80;
 }
 
 * {
   box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  transition: background 0.8s ease, border-color 0.8s ease, color 0.8s ease, box-shadow 0.8s ease, stroke 0.8s ease, fill 0.8s ease;
 }
 
 ::-webkit-scrollbar { width: 8px; }
@@ -37,6 +65,11 @@ body {
   font-family: var(--font-pequena);
   color: var(--color-white);
   background-color: var(--color-black);
+  /* Tingimento do fundo conforme o status do Discord (ver [data-presence] no :root) */
+  background-image:
+    radial-gradient(1100px circle at 50% -10%, rgba(var(--color-destaque1-rgb), 0.16), transparent 60%),
+    radial-gradient(900px circle at 100% 110%, rgba(var(--color-destaque2-rgb), 0.14), transparent 65%);
+  background-attachment: fixed;
   overflow-x: hidden;
   position: relative;
 }
@@ -77,7 +110,7 @@ a {
   height: 360px;
   top: -80px;
   left: -100px;
-  background: radial-gradient(circle, rgba(47, 129, 255, 0.35), transparent 70%);
+  background: radial-gradient(circle, rgba(var(--color-destaque1-rgb), 0.35), transparent 70%);
 }
 
 .blob-b {
@@ -85,7 +118,7 @@ a {
   height: 380px;
   bottom: -100px;
   right: -110px;
-  background: radial-gradient(circle, rgba(61, 90, 153, 0.35), transparent 70%);
+  background: radial-gradient(circle, rgba(var(--color-destaque2-rgb), 0.35), transparent 70%);
   animation-delay: -9s;
 }
 
@@ -159,8 +192,38 @@ a {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Estado inicial: escondido, só sobe quando entra na tela (ver IntersectionObserver no <script>) */
 [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+[data-reveal].in-view {
   animation: fadeUp 0.6s ease both;
+}
+
+@keyframes iconRise {
+  from { opacity: 0; transform: translateY(14px) scale(0.85); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.icon-rise {
+  opacity: 0;
+  transform: translateY(14px) scale(0.85);
+}
+
+[data-reveal].in-view .icon-rise,
+.icon-rise.in-view {
+  animation: iconRise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  .icon-rise {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
 }
 
 .profile-panel,
@@ -168,20 +231,14 @@ a {
 .music-panel,
 .activity-panel {
   position: relative;
-  border: 1px solid var(--line);
-  background: var(--color-panel);
-  backdrop-filter: blur(18px);
   border-radius: 22px;
-  box-shadow: 0 24px 60px -32px rgba(0, 0, 0, 0.6);
 }
 
 .profile-panel {
   overflow: hidden;
   padding: 24px 20px;
   text-align: center;
-  background:
-    radial-gradient(480px circle at 15% 0%, rgba(var(--color-destaque1-rgb), 0.16), transparent 60%),
-    var(--color-panel);
+  background: radial-gradient(480px circle at 15% 0%, rgba(var(--color-destaque1-rgb), 0.16), transparent 60%);
 }
 
 .profile-panel::before {
@@ -233,12 +290,10 @@ a {
 }
 
 .status-dot.status-idle {
-  width: auto;
-  height: auto;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  overflow: visible;
+  /* Fundo fixo (não usa a cor de destaque do tema) pra lua sempre ter contraste,
+     mesmo quando o site também fica dourado no status "ausente". */
+  background: #14110a;
+  border-color: #14110a;
 }
 
 .status-dot-icon {
@@ -249,15 +304,15 @@ a {
 
 .status-dot.status-idle .status-dot-icon {
   display: block;
-  font-size: 17px;
+  font-size: 11px;
   color: #f2b705;
-  filter: drop-shadow(0 0 4px rgba(242, 183, 5, 0.7));
+  filter: drop-shadow(0 0 3px rgba(242, 183, 5, 0.7));
   animation: moonGlow 2.6s ease-in-out infinite;
 }
 
 @keyframes moonGlow {
-  0%, 100% { filter: drop-shadow(0 0 2px rgba(242, 183, 5, 0.5)); }
-  50% { filter: drop-shadow(0 0 6px rgba(242, 183, 5, 0.9)); }
+  0%, 100% { filter: drop-shadow(0 0 1px rgba(242, 183, 5, 0.5)); }
+  50% { filter: drop-shadow(0 0 5px rgba(242, 183, 5, 0.9)); }
 }
 
 .status-dot.status-dnd {
@@ -697,17 +752,6 @@ h1, h2, p {
 }
 
 .page-footer span {
-  color: var(--color-destaque1);
-}
-
-.page-footer a {
-  color: var(--color-gray2);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  transition: color 0.3s ease;
-}
-
-.page-footer a:hover {
   color: var(--color-destaque1);
 }
 

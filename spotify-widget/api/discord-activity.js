@@ -1,6 +1,10 @@
 const DISCORD_USER_ID = '1062440850208067664';
 const LANYARD_URL = `https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`;
 const REDIS_KEY = 'discord:last-activity';
+// O Lanyard às vezes tem uma falha passageira e devolve zero atividades por um instante,
+// mesmo com o app continuando aberto. Damos essa folga antes de considerar a atividade
+// realmente encerrada, pra não piscar pra "última atividade" à toa.
+const GRACE_MS = 45000;
 
 // Ignora status customizado (type 4) e o Spotify (já mostrado no widget de música).
 function pickActivity(activities) {
@@ -56,7 +60,8 @@ module.exports = async (req, res) => {
 
     const last = redisConfigured() ? await redisGet(REDIS_KEY).catch(() => null) : null;
     if (last && last.activity) {
-      res.status(200).json({ discordStatus, activity: last.activity, seenAt: last.seenAt, isCurrent: false });
+      const withinGrace = Date.now() - last.seenAt < GRACE_MS;
+      res.status(200).json({ discordStatus, activity: last.activity, seenAt: last.seenAt, isCurrent: withinGrace });
       return;
     }
 

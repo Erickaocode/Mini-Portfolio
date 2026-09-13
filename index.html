@@ -173,13 +173,62 @@
       </section>
 
       <footer class="page-footer">
-        <p>Feito por Erick<span>│</span>Dev · <a href="https://erickaocode.github.io/Portfolio/" target="_blank" rel="noopener noreferrer">portfólio completo</a></p>
+        <p>Feito por Erick<span>│</span>Dev</p>
         <p>&copy; 2026 Todos os direitos reservados.</p>
       </footer>
     </div>
   </main>
 
   <script>
+    // ===== ÍCONES SUBINDO (fade + translateY em cascata ao carregar) =====
+    (function () {
+      // .status-dot-icon fica de fora: ela só vira display:block quando o status muda pra
+      // "ausente" (bem depois do load), e ficaria presa no estado invisível dessa animação de entrada.
+      const ICON_SELECTOR = [
+        'img.skill-icon', '.skills i',
+        '.social-link i',
+        '.mini-action i',
+        '.cta svg',
+        '.header-link i',
+        '.np-art-fallback'
+      ].join(', ');
+
+      // Ícones dentro de seções com data-reveal sobem em cascata assim que a seção
+      // (o card) entra na tela — controlado pela classe .in-view abaixo.
+      document.querySelectorAll('[data-reveal]').forEach((section) => {
+        const baseDelay = parseFloat(section.style.animationDelay) || 0;
+        section.querySelectorAll(ICON_SELECTOR).forEach((icon, i) => {
+          icon.classList.add('icon-rise');
+          icon.style.animationDelay = (baseDelay + 0.25 + i * 0.04) + 's';
+        });
+      });
+
+      // Ícones fora de seções com data-reveal (ex.: cabeçalho) sobem logo no início da página.
+      document.querySelectorAll(ICON_SELECTOR).forEach((icon, i) => {
+        if (icon.classList.contains('icon-rise')) return;
+        icon.classList.add('icon-rise', 'in-view');
+        icon.style.animationDelay = (0.1 + i * 0.04) + 's';
+      });
+
+      // Cada card (data-reveal) só sobe quando entra na área visível, conforme o scroll desce a página.
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const revealSections = document.querySelectorAll('[data-reveal]');
+      if (reduceMotion || !('IntersectionObserver' in window)) {
+        revealSections.forEach((section) => section.classList.add('in-view'));
+      } else {
+        const revealObserver = new IntersectionObserver((entries, observer) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('in-view');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+
+        revealSections.forEach((section) => revealObserver.observe(section));
+      }
+    })();
+
     const glow = document.getElementById('cursorGlow');
     if (window.matchMedia('(pointer: fine)').matches) {
       window.addEventListener('pointermove', (e) => {
@@ -281,6 +330,11 @@
     const DISCORD_ACTIVITY_ENDPOINT = 'https://spotify-widget-fawn.vercel.app/api/discord-activity';
     const STATUS_POLL_MS = 20000;
     const statusDot = document.getElementById('statusDot');
+
+    // Tinge o site inteiro com a cor do status do Discord (ver [data-presence] no styles.css).
+    function applyPresenceTheme(status) {
+      document.documentElement.setAttribute('data-presence', status || 'offline');
+    }
 
     const acDot = document.getElementById('acDot');
     const acStatusText = document.getElementById('acStatusText');
@@ -496,6 +550,7 @@
           const labels = { online: 'Online', idle: 'Ausente', dnd: 'Não perturbe', offline: 'Offline' };
           statusDot.title = labels[status] || 'Offline';
         }
+        applyPresenceTheme(status);
 
         if (acBody) {
           if (data.activity && data.isCurrent) {
@@ -511,6 +566,7 @@
           statusDot.className = 'status-dot status-offline';
           statusDot.title = 'Offline';
         }
+        applyPresenceTheme('offline');
         if (acBody) {
           const last = loadLastActivity();
           if (last && last.activity) {
