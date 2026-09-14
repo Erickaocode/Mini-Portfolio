@@ -128,6 +128,98 @@ a {
   66% { transform: translate(-3%, 5%) scale(0.95); }
 }
 
+/* ===== Animação de entrada: a marca "Erick│Dev" abre ao meio e revela o site =====
+   As duas metades usam a mesma palavra da .brand-mark; a barra do centro cresce, elas
+   se afastam pros lados e a barra some, deixando a página por trás. Roda em todo carregamento. */
+body.intro-active {
+  overflow: hidden;
+}
+
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+.intro-overlay.intro-done {
+  display: none;
+}
+
+.intro-panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  display: flex;
+  align-items: center;
+  background: var(--color-black);
+  transition: transform 0.7s cubic-bezier(.76, 0, .24, 1);
+}
+
+.intro-panel-left {
+  left: 0;
+  justify-content: flex-end;
+}
+
+.intro-panel-right {
+  right: 0;
+  justify-content: flex-start;
+}
+
+.intro-overlay.intro-split .intro-panel-left {
+  transform: translateX(-100%);
+}
+
+.intro-overlay.intro-split .intro-panel-right {
+  transform: translateX(100%);
+}
+
+.intro-word {
+  font-family: var(--font-grande);
+  font-weight: 800;
+  font-size: clamp(2rem, 9vw, 4.5rem);
+  letter-spacing: 1px;
+  color: var(--color-white);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.intro-panel-left .intro-word {
+  padding-right: 0.5rem;
+}
+
+.intro-panel-right .intro-word {
+  padding-left: 0.5rem;
+}
+
+.intro-overlay.intro-open .intro-word {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.intro-bar {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 0;
+  background: var(--color-destaque1);
+  box-shadow: 0 0 24px rgba(var(--color-destaque1-rgb), 0.65);
+  transform: translate(-50%, -50%);
+  transition: height 0.45s ease 0.15s, opacity 0.3s ease;
+}
+
+.intro-overlay.intro-open .intro-bar {
+  height: 72px;
+}
+
+.intro-overlay.intro-split .intro-bar {
+  height: 140vh;
+  opacity: 0;
+  transition: height 0.5s ease, opacity 0.35s ease 0.2s;
+}
+
 /* ===== Layout (mobile-first) ===== */
 .container {
   width: min(100%, 460px);

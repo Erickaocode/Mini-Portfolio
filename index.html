@@ -17,6 +17,17 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div class="intro-overlay" id="introOverlay" aria-hidden="true">
+    <div class="intro-panel intro-panel-left">
+      <span class="intro-word">Erick</span>
+    </div>
+    <div class="intro-panel intro-panel-right">
+      <span class="intro-word">Dev</span>
+    </div>
+    <div class="intro-bar"></div>
+  </div>
+  <noscript><style>#introOverlay { display: none; }</style></noscript>
+
   <div id="cursorGlow"></div>
   <div class="blob blob-a"></div>
   <div class="blob blob-b"></div>
@@ -180,6 +191,30 @@
   </main>
 
   <script>
+    // ===== ANIMAÇÃO DE ENTRADA (a marca "Erick│Dev" abre ao meio e revela o site) =====
+    (function () {
+      const overlay = document.getElementById('introOverlay');
+      if (!overlay) return;
+
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        overlay.remove();
+        return;
+      }
+
+      document.body.classList.add('intro-active');
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => overlay.classList.add('intro-open'));
+      });
+
+      setTimeout(() => overlay.classList.add('intro-split'), 650);
+      setTimeout(() => {
+        document.body.classList.remove('intro-active');
+        overlay.classList.add('intro-done');
+        overlay.remove();
+      }, 1350);
+    })();
+
     // ===== ÍCONES SUBINDO (fade + translateY em cascata ao carregar) =====
     (function () {
       // .status-dot-icon fica de fora: ela só vira display:block quando o status muda pra
