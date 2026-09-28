@@ -572,6 +572,23 @@
       elapsedTimer = setInterval(updateSeen, 60000);
     }
 
+    // Quando o celular avisa que cheguei na academia (ver /api/location), isso tem prioridade sobre o Discord.
+    function renderTraining(location) {
+      stopElapsedLoop();
+      acBody.classList.remove('np-fallback', 'np-stale');
+      acDot.className = 'np-dot np-dot-live';
+      acStatusText.textContent = 'Treinando';
+      acTitle.textContent = 'Academia';
+      acDetail.textContent = '';
+      clearActivityArt('fa-dumbbell');
+
+      const updateSince = () => {
+        acElapsed.textContent = 'Chegou ' + formatElapsed(location.since);
+      };
+      updateSince();
+      elapsedTimer = setInterval(updateSince, 60000);
+    }
+
     async function fetchDiscordPresence() {
       try {
         const res = await fetch(DISCORD_ACTIVITY_ENDPOINT, { cache: 'no-store' });
@@ -588,7 +605,9 @@
         applyPresenceTheme(status);
 
         if (acBody) {
-          if (data.activity && data.isCurrent) {
+          if (data.location && data.location.since) {
+            renderTraining(data.location);
+          } else if (data.activity && data.isCurrent) {
             renderActivity(data.activity);
           } else if (data.activity) {
             renderLastActivity(data.activity, data.seenAt);

@@ -1,6 +1,8 @@
 const DISCORD_USER_ID = '1062440850208067664';
 const LANYARD_URL = `https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`;
 const REDIS_KEY = 'discord:last-activity';
+// Gravado pelo /api/location quando o celular avisa que cheguei na academia.
+const LOCATION_KEY = 'location:current';
 // O Lanyard às vezes tem uma falha passageira e devolve zero atividades por um instante,
 // mesmo com o app continuando aberto. Damos essa folga antes de considerar a atividade
 // realmente encerrada, pra não piscar pra "última atividade" à toa.
@@ -46,6 +48,7 @@ module.exports = async (req, res) => {
 
     const discordStatus = lanyardJson.data.discord_status || 'offline';
     const activity = pickActivity(lanyardJson.data.activities);
+    const location = redisConfigured() ? await redisGet(LOCATION_KEY).catch(() => null) : null;
 
     if (activity) {
       const record = { activity, seenAt: Date.now() };
@@ -54,18 +57,18 @@ module.exports = async (req, res) => {
       if (redisConfigured()) {
         await redisSet(REDIS_KEY, record).catch(() => {});
       }
-      res.status(200).json({ discordStatus, activity, seenAt: record.seenAt, isCurrent: true });
+      res.status(200).json({ discordStatus, activity, seenAt: record.seenAt, isCurrent: true, location });
       return;
     }
 
     const last = redisConfigured() ? await redisGet(REDIS_KEY).catch(() => null) : null;
     if (last && last.activity) {
       const withinGrace = Date.now() - last.seenAt < GRACE_MS;
-      res.status(200).json({ discordStatus, activity: last.activity, seenAt: last.seenAt, isCurrent: withinGrace });
+      res.status(200).json({ discordStatus, activity: last.activity, seenAt: last.seenAt, isCurrent: withinGrace, location });
       return;
     }
 
-    res.status(200).json({ discordStatus, activity: null, seenAt: null, isCurrent: false });
+    res.status(200).json({ discordStatus, activity: null, seenAt: null, isCurrent: false, location });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
