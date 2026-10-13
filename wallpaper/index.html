@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Erick│Dev Wallpaper</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --font-grande: 'Syne', 'Segoe UI', sans-serif;
+      --font-pequena: 'DM Sans', 'Segoe UI', sans-serif;
+      --color-black: #080808;
+      --color-gray1: #3d4143;
+      --color-gray2: #9c9d9d;
+      --color-white: #f6f6f6;
+      --color-destaque1: #2f81ff;
+      --color-destaque1-rgb: 47, 129, 255;
+      --color-quente: #ff8a3d;
+      --color-critico: #ed4245;
+      --line: hsla(0, 0%, 100%, 0.12);
+      --ease-abre: cubic-bezier(.76, 0, .24, 1);
+      --reveal-width: 380px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--color-black);
+      color: var(--color-white);
+      font-family: var(--font-pequena);
+      user-select: none;
+      cursor: default;
+    }
+
+    /* ===== Fundo: brilho azul bem sutil que segue o mouse + vinheta ===== */
+    .glow {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%),
+        rgba(var(--color-destaque1-rgb), 0.07), transparent 60%);
+      transition: background 0.2s;
+      pointer-events: none;
+    }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
+      pointer-events: none;
+    }
+
+    /* ===== Marca "Erick│Dev" ===== */
+    .stage {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Área de hover maior que o texto, pra não precisar mirar no traço do meio. */
+    .mark {
+      display: flex;
+      align-items: center;
+      padding: 80px 120px;
+    }
+
+    .word {
+      font-family: var(--font-grande);
+      font-weight: 800;
+      font-size: clamp(3rem, 7vw, 6.5rem);
+      letter-spacing: 1px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.45s ease, transform 0.45s ease, color 0.5s ease;
+    }
+
+    .word-left { padding-right: 0.5rem; }
+    .word-right { padding-left: 0.5rem; }
+
+    .ready .word {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .open .word { color: rgba(246, 246, 246, 0.35); }
+
+    /* O painel do meio nasce com largura 0: as bordas esquerda e direita ficam coladas
+       e formam o traço azul da marca. No hover ele alarga, e o traço se divide em dois. */
+    .reveal {
+      position: relative;
+      width: 0;
+      height: 0;
+      border-left: 2px solid var(--color-destaque1);
+      border-right: 2px solid var(--color-destaque1);
+      box-shadow: -10px 0 24px -10px rgba(var(--color-destaque1-rgb), 0.65),
+                   10px 0 24px -10px rgba(var(--color-destaque1-rgb), 0.65);
+      overflow: hidden;
+      transition: height 0.45s ease 0.15s, width 0.7s var(--ease-abre);
+    }
+
+    .ready .reveal { height: clamp(72px, 9vw, 110px); }
+
+    .open .reveal {
+      width: var(--reveal-width);
+      height: 300px;
+      transition: height 0.5s var(--ease-abre), width 0.7s var(--ease-abre);
+    }
+
+    .reveal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: calc(var(--reveal-width) - 4px);
+      padding: 0 28px;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .open .reveal-content {
+      opacity: 1;
+      transition: opacity 0.4s ease 0.35s;
+    }
+
+    /* Cada linha sobe em cascata quando o painel abre. */
+    .row {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .open .row { opacity: 1; transform: translateY(0); }
+    .open .row:nth-child(1) { transition-delay: 0.35s; }
+    .open .row:nth-child(2) { transition-delay: 0.45s; }
+    .open .row:nth-child(3) { transition-delay: 0.55s; }
+
+    .eyebrow {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--color-gray2);
+    }
+
+    /* ===== Relógio ===== */
+    .clock {
+      text-align: center;
+    }
+
+    .time {
+      font-family: var(--font-grande);
+      font-weight: 700;
+      font-size: 3.4rem;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .time .seconds {
+      font-size: 1.2rem;
+      color: var(--color-destaque1);
+      margin-left: 4px;
+    }
+
+    .date {
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: var(--color-gray2);
+      text-transform: capitalize;
+    }
+
+    /* ===== Temperaturas ===== */
+    .temps {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .temp {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .temp-value {
+      margin-top: 2px;
+      font-family: var(--font-grande);
+      font-weight: 700;
+      font-size: 1.5rem;
+      font-variant-numeric: tabular-nums;
+      transition: color 0.4s ease;
+    }
+
+    .temp-value.quente { color: var(--color-quente); }
+    .temp-value.critico { color: var(--color-critico); }
+    .temp-value.off { color: var(--color-gray1); }
+
+    /* ===== Tocando agora ===== */
+    .music {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .art {
+      flex-shrink: 0;
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06) center / cover no-repeat;
+      display: grid;
+      place-items: center;
+    }
+
+    .art svg { width: 22px; fill: var(--color-gray2); }
+    .art.has-img svg { display: none; }
+
+    .music-info {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .music-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-gray1);
+    }
+
+    .dot.live {
+      background: #1db954;
+      box-shadow: 0 0 8px #1db954;
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes pulse { 50% { opacity: 0.4; } }
+
+    .title, .artist {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .title { margin-top: 3px; font-weight: 700; font-size: 0.95rem; }
+    .artist { font-size: 0.8rem; color: var(--color-gray2); }
+
+    .progress {
+      margin-top: 7px;
+      height: 3px;
+      border-radius: 3px;
+      background: var(--line);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      background: var(--color-destaque1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0.01ms !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow" id="glow"></div>
+  <div class="vignette"></div>
+
+  <main class="stage">
+    <div class="mark" id="mark">
+      <span class="word word-left">Erick</span>
+
+      <div class="reveal">
+        <div class="reveal-content">
+          <section class="row clock">
+            <div class="time"><span id="hhmm">--:--</span><span class="seconds" id="ss">--</span></div>
+            <p class="date" id="date"></p>
+          </section>
+
+          <section class="row temps">
+            <div class="temp">
+              <p class="eyebrow">CPU</p>
+              <p class="temp-value off" id="cpuTemp">--°</p>
+            </div>
+            <div class="temp">
+              <p class="eyebrow">GPU</p>
+              <p class="temp-value off" id="gpuTemp">--°</p>
+            </div>
+          </section>
+
+          <section class="row music">
+            <div class="art" id="art">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+            </div>
+            <div class="music-info">
+              <div class="music-status">
+                <span class="dot" id="musicDot"></span>
+                <span class="eyebrow" id="musicLabel">Spotify</span>
+              </div>
+              <p class="title" id="musicTitle">Nada tocando</p>
+              <p class="artist" id="musicArtist"></p>
+              <div class="progress"><div class="progress-fill" id="musicProgress"></div></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <span class="word word-right">Dev</span>
+    </div>
+  </main>
+
+  <script>
+    // Servidor web do LibreHardwareMonitor (Options -> Remote Web Server -> Run).
+    const LHM_ENDPOINT = 'http://localhost:8085/data.json';
+    const SPOTIFY_ENDPOINT = 'https://spotify-widget-fawn.vercel.app/api/now-playing';
+    const TEMP_POLL_MS = 3000;
+    const MUSIC_POLL_MS = 8000;
+    const CLOSE_DELAY_MS = 350;
+
+    const mark = document.getElementById('mark');
+
+    // ===== Entrada: as palavras sobem e o traço cresce, igual à intro do site =====
+    requestAnimationFrame(() => requestAnimationFrame(() => mark.classList.add('ready')));
+
+    // ===== Hover: abre o painel. Clique fixa aberto (clique de novo pra soltar) =====
+    let pinned = false;
+    let closeTimer = null;
+
+    mark.addEventListener('mouseenter', () => {
+      clearTimeout(closeTimer);
+      mark.classList.add('open');
+    });
+
+    // Pequeno atraso ao sair, pra não piscar se o mouse escapar por um instante.
+    mark.addEventListener('mouseleave', () => {
+      if (pinned) return;
+      closeTimer = setTimeout(() => mark.classList.remove('open'), CLOSE_DELAY_MS);
+    });
+
+    mark.addEventListener('click', () => {
+      pinned = !pinned;
+      mark.classList.toggle('open', pinned || mark.matches(':hover'));
+    });
+
+    // ===== Brilho de fundo seguindo o mouse =====
+    const glow = document.getElementById('glow');
+    window.addEventListener('mousemove', (e) => {
+      glow.style.setProperty('--mx', e.clientX + 'px');
+      glow.style.setProperty('--my', e.clientY + 'px');
+    });
+
+    // ===== Relógio =====
+    const hhmmEl = document.getElementById('hhmm');
+    const ssEl = document.getElementById('ss');
+    const dateEl = document.getElementById('date');
+    const dateFmt = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+    const pad = (n) => String(n).padStart(2, '0');
+
+    function tickClock() {
+      const now = new Date();
+      hhmmEl.textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+      ssEl.textContent = pad(now.getSeconds());
+      dateEl.textContent = dateFmt.format(now);
+    }
+
+    tickClock();
+    setInterval(tickClock, 1000);
+
+    // ===== Temperaturas (LibreHardwareMonitor) =====
+    const cpuTempEl = document.getElementById('cpuTemp');
+    const gpuTempEl = document.getElementById('gpuTemp');
+
+    // O data.json é uma árvore: Computador > Hardware (CPU, GPU...) > "Temperatures" > sensores.
+    // O tipo de hardware vem no ImageURL de cada nó (ex.: "images_icon/cpu.png", "nvidia.png").
+    function collectTemps(node, hardware, out) {
+      const image = node.ImageURL || '';
+      if (/cpu.png/i.test(image)) hardware = 'cpu';
+      else if (/(nvidia|ati|amd|intel).png/i.test(image) && !/cpu/i.test(image)) hardware = 'gpu';
+
+      const value = parseFloat(String(node.Value || '').replace(',', '.'));
+      if (hardware && /°C/.test(node.Value || '') && !Number.isNaN(value)) {
+        out.push({ hardware, name: node.Text || '', value });
+      }
+
+      (node.Children || []).forEach((child) => collectTemps(child, hardware, out));
+      return out;
+    }
+
+    // Prefere o sensor "geral" do chip; se não tiver, usa o mais quente.
+    function pickTemp(temps, hardware, preferred) {
+      const list = temps.filter((t) => t.hardware === hardware);
+      if (!list.length) return null;
+      const best = list.find((t) => preferred.test(t.name));
+      return best ? best.value : Math.max(...list.map((t) => t.value));
+    }
+
+    function renderTemp(el, value) {
+      el.classList.remove('off', 'quente', 'critico');
+      if (value == null) {
+        el.textContent = '--°';
+        el.classList.add('off');
+        return;
+      }
+      el.textContent = Math.round(value) + '°';
+      if (value >= 85) el.classList.add('critico');
+      else if (value >= 70) el.classList.add('quente');
+    }
+
+    async function fetchTemps() {
+      try {
+        const res = await fetch(LHM_ENDPOINT, { cache: 'no-store' });
+        if (!res.ok) throw new Error('LHM ' + res.status);
+        const temps = collectTemps(await res.json(), null, []);
+        renderTemp(cpuTempEl, pickTemp(temps, 'cpu', /package|tctl|tdie|core average/i));
+        renderTemp(gpuTempEl, pickTemp(temps, 'gpu', /^gpu core$/i));
+      } catch (err) {
+        renderTemp(cpuTempEl, null);
+        renderTemp(gpuTempEl, null);
+      }
+    }
+
+    fetchTemps();
+    setInterval(fetchTemps, TEMP_POLL_MS);
+
+    // ===== Tocando agora (mesmo endpoint do site) =====
+    const artEl = document.getElementById('art');
+    const musicDot = document.getElementById('musicDot');
+    const musicLabel = document.getElementById('musicLabel');
+    const musicTitle = document.getElementById('musicTitle');
+    const musicArtist = document.getElementById('musicArtist');
+    const musicProgress = document.getElementById('musicProgress');
+
+    // A barra anda sozinha entre um polling e outro, a partir do último progresso recebido.
+    let track = null;
+    let trackSyncedAt = 0;
+
+    function renderProgress() {
+      if (track && track.durationMs) {
+        const elapsed = track.isPlaying ? Date.now() - trackSyncedAt : 0;
+        const pct = Math.min(1, (track.progressMs + elapsed) / track.durationMs);
+        musicProgress.style.width = (pct * 100) + '%';
+      } else {
+        musicProgress.style.width = '0';
+      }
+      requestAnimationFrame(renderProgress);
+    }
+
+    function renderTrack(data) {
+      track = data && data.title ? data : null;
+      trackSyncedAt = Date.now();
+
+      if (!track) {
+        musicDot.className = 'dot';
+        musicLabel.textContent = 'Spotify';
+        musicTitle.textContent = 'Nada tocando';
+        musicArtist.textContent = '';
+        artEl.style.backgroundImage = '';
+        artEl.classList.remove('has-img');
+        return;
+      }
+
+      musicDot.className = track.isPlaying ? 'dot live' : 'dot';
+      musicLabel.textContent = track.isPlaying ? 'Tocando agora' : 'Ouviu por último';
+      musicTitle.textContent = track.title;
+      musicArtist.textContent = track.artist;
+
+      if (track.albumArt) {
+        artEl.style.backgroundImage = 'url("' + track.albumArt + '")';
+        artEl.classList.add('has-img');
+      } else {
+        artEl.style.backgroundImage = '';
+        artEl.classList.remove('has-img');
+      }
+    }
+
+    async function fetchNowPlaying() {
+      try {
+        const res = await fetch(SPOTIFY_ENDPOINT, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Spotify ' + res.status);
+        renderTrack(await res.json());
+      } catch (err) {
+        // Mantém a última música na tela se a rede oscilar.
+      }
+    }
+
+    fetchNowPlaying();
+    setInterval(fetchNowPlaying, MUSIC_POLL_MS);
+    requestAnimationFrame(renderProgress);
+  </script>
+</body>
+</html>
