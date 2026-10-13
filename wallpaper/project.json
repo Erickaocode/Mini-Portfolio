@@ -1,0 +1,8 @@
+{
+  "file": "index.html",
+  "title": "Erick│Dev",
+  "description": "Marca Erick│Dev que abre no hover e mostra horário, temperatura do PC e o que está tocando no Spotify.",
+  "type": "web",
+  "tags": ["Minimalist"],
+  "visibility": "private"
+}
