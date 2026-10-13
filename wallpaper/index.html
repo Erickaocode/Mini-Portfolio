@@ -181,8 +181,8 @@
     /* ===== Temperaturas ===== */
     .temps {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
     }
 
     .temp {
@@ -196,7 +196,7 @@
       margin-top: 2px;
       font-family: var(--font-grande);
       font-weight: 700;
-      font-size: 1.5rem;
+      font-size: 1.35rem;
       font-variant-numeric: tabular-nums;
       transition: color 0.4s ease;
     }
@@ -300,8 +300,12 @@
               <p class="temp-value off" id="cpuTemp">--°</p>
             </div>
             <div class="temp">
-              <p class="eyebrow">GPU</p>
+              <p class="eyebrow" id="gpuLabel">GPU</p>
               <p class="temp-value off" id="gpuTemp">--°</p>
+            </div>
+            <div class="temp">
+              <p class="eyebrow">RAM</p>
+              <p class="temp-value off" id="ramUse">--%</p>
             </div>
           </section>
 
@@ -383,56 +387,77 @@
     tickClock();
     setInterval(tickClock, 1000);
 
-    // ===== Temperaturas (LibreHardwareMonitor) =====
+    // ===== Hardware (LibreHardwareMonitor) =====
     const cpuTempEl = document.getElementById('cpuTemp');
     const gpuTempEl = document.getElementById('gpuTemp');
+    const gpuLabelEl = document.getElementById('gpuLabel');
+    const ramUseEl = document.getElementById('ramUse');
 
-    // O data.json é uma árvore: Computador > Hardware (CPU, GPU...) > "Temperatures" > sensores.
+    // O data.json é uma árvore: Computador > Hardware (CPU, GPU...) > grupo ("Temperatures", "Load") > sensores.
     // O tipo de hardware vem no ImageURL de cada nó (ex.: "images_icon/cpu.png", "nvidia.png").
-    function collectTemps(node, hardware, out) {
+    // A "Virtual Memory" também usa ram.png, por isso fica de fora pelo nome.
+    function collectSensors(node, hardware, out) {
       const image = node.ImageURL || '';
-      if (/cpu.png/i.test(image)) hardware = 'cpu';
-      else if (/(nvidia|ati|amd|intel).png/i.test(image) && !/cpu/i.test(image)) hardware = 'gpu';
+      if (/cpu\.png/i.test(image)) hardware = 'cpu';
+      else if (/(nvidia|ati|amd|intel)\.png/i.test(image)) hardware = 'gpu';
+      else if (/ram\.png/i.test(image)) hardware = /virtual/i.test(node.Text || '') ? null : 'ram';
 
-      const value = parseFloat(String(node.Value || '').replace(',', '.'));
-      if (hardware && /°C/.test(node.Value || '') && !Number.isNaN(value)) {
-        out.push({ hardware, name: node.Text || '', value });
+      const raw = String(node.Value || '');
+      const value = parseFloat(raw.replace(',', '.'));
+      const unit = /°C/.test(raw) ? 'temp' : /%$/.test(raw) ? 'load' : null;
+      if (hardware && unit && !Number.isNaN(value)) {
+        out.push({ hardware, unit, name: node.Text || '', value });
       }
 
-      (node.Children || []).forEach((child) => collectTemps(child, hardware, out));
+      (node.Children || []).forEach((child) => collectSensors(child, hardware, out));
       return out;
     }
 
-    // Prefere o sensor "geral" do chip; se não tiver, usa o mais quente.
-    function pickTemp(temps, hardware, preferred) {
-      const list = temps.filter((t) => t.hardware === hardware);
+    // Prefere o sensor "geral" do chip; se não tiver, usa o maior valor.
+    function pickSensor(sensors, hardware, unit, preferred) {
+      const list = sensors.filter((s) => s.hardware === hardware && s.unit === unit);
       if (!list.length) return null;
-      const best = list.find((t) => preferred.test(t.name));
-      return best ? best.value : Math.max(...list.map((t) => t.value));
+      const best = list.find((s) => preferred.test(s.name));
+      return best ? best.value : Math.max(...list.map((s) => s.value));
     }
 
-    function renderTemp(el, value) {
+    // Temperatura: laranja a partir de 70°, vermelho a partir de 85°. Uso: laranja a partir de 85%, vermelho a partir de 95%.
+    function renderSensor(el, value, unit) {
+      const suffix = unit === 'temp' ? '°' : '%';
       el.classList.remove('off', 'quente', 'critico');
       if (value == null) {
-        el.textContent = '--°';
+        el.textContent = '--' + suffix;
         el.classList.add('off');
         return;
       }
-      el.textContent = Math.round(value) + '°';
-      if (value >= 85) el.classList.add('critico');
-      else if (value >= 70) el.classList.add('quente');
+      const [quente, critico] = unit === 'temp' ? [70, 85] : [85, 95];
+      el.textContent = Math.round(value) + suffix;
+      if (value >= critico) el.classList.add('critico');
+      else if (value >= quente) el.classList.add('quente');
     }
 
     async function fetchTemps() {
       try {
         const res = await fetch(LHM_ENDPOINT, { cache: 'no-store' });
         if (!res.ok) throw new Error('LHM ' + res.status);
-        const temps = collectTemps(await res.json(), null, []);
-        renderTemp(cpuTempEl, pickTemp(temps, 'cpu', /package|tctl|tdie|core average/i));
-        renderTemp(gpuTempEl, pickTemp(temps, 'gpu', /^gpu core$/i));
+        const sensors = collectSensors(await res.json(), null, []);
+        renderSensor(cpuTempEl, pickSensor(sensors, 'cpu', 'temp', /package|tctl|tdie|core average/i), 'temp');
+
+        // GPU integrada (ex.: Ryzen com Radeon) não tem sensor de temperatura próprio: mostra o uso no lugar.
+        const gpuTemp = pickSensor(sensors, 'gpu', 'temp', /^gpu core$/i);
+        if (gpuTemp != null) {
+          gpuLabelEl.textContent = 'GPU';
+          renderSensor(gpuTempEl, gpuTemp, 'temp');
+        } else {
+          gpuLabelEl.textContent = 'GPU uso';
+          renderSensor(gpuTempEl, pickSensor(sensors, 'gpu', 'load', /^gpu core$/i), 'load');
+        }
+
+        renderSensor(ramUseEl, pickSensor(sensors, 'ram', 'load', /^memory$/i), 'load');
       } catch (err) {
-        renderTemp(cpuTempEl, null);
-        renderTemp(gpuTempEl, null);
+        renderSensor(cpuTempEl, null, 'temp');
+        renderSensor(gpuTempEl, null, 'temp');
+        renderSensor(ramUseEl, null, 'load');
       }
     }
 
