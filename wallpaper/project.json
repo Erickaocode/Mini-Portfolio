@@ -4,5 +4,15 @@
   "description": "Marca Erick│Dev que abre no hover e mostra horário, temperatura do PC e o que está tocando no Spotify.",
   "type": "web",
   "tags": ["Minimalist"],
-  "visibility": "private"
+  "visibility": "private",
+  "general": {
+    "properties": {
+      "somentedesktoplivre": {
+        "order": 0,
+        "text": "Só animar com a área de trabalho livre",
+        "type": "bool",
+        "value": true
+      }
+    }
+  }
 }

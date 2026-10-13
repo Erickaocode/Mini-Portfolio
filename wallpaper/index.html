@@ -347,7 +347,35 @@
     let pinned = false;
     let closeTimer = null;
 
+    // Opção do Wallpaper Engine "Só animar com a área de trabalho livre": quando ele pausa o papel de parede
+    // porque uma janela ganhou foco (Configurações -> Desempenho -> "Outro aplicativo em foco" = Pausar),
+    // o painel fecha e o hover fica bloqueado até a área de trabalho voltar a ficar livre.
+    let onlyFreeDesktop = true;
+    let paused = false;
+
+    window.wallpaperPropertyListener = {
+      applyUserProperties(props) {
+        if (props.somentedesktoplivre) onlyFreeDesktop = props.somentedesktoplivre.value;
+      },
+      setPaused(isPaused) {
+        paused = isPaused;
+        if (isPaused && onlyFreeDesktop) {
+          pinned = false;
+          clearTimeout(closeTimer);
+          mark.classList.remove('open');
+        }
+        // Enquanto pausado as buscas param; ao voltar, atualiza na hora em vez de esperar o próximo ciclo.
+        if (!isPaused) {
+          fetchTemps();
+          fetchNowPlaying();
+        }
+      },
+    };
+
+    const hoverBlocked = () => paused && onlyFreeDesktop;
+
     mark.addEventListener('mouseenter', () => {
+      if (hoverBlocked()) return;
       clearTimeout(closeTimer);
       mark.classList.add('open');
     });
@@ -359,6 +387,7 @@
     });
 
     mark.addEventListener('click', () => {
+      if (hoverBlocked()) return;
       pinned = !pinned;
       mark.classList.toggle('open', pinned || mark.matches(':hover'));
     });
@@ -437,6 +466,7 @@
     }
 
     async function fetchTemps() {
+      if (paused) return;
       try {
         const res = await fetch(LHM_ENDPOINT, { cache: 'no-store' });
         if (!res.ok) throw new Error('LHM ' + res.status);
@@ -516,6 +546,7 @@
     }
 
     async function fetchNowPlaying() {
+      if (paused) return;
       try {
         const res = await fetch(SPOTIFY_ENDPOINT, { cache: 'no-store' });
         if (!res.ok) throw new Error('Spotify ' + res.status);
